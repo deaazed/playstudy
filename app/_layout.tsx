@@ -1,11 +1,11 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
-
-import { useColorScheme } from '@/components/useColorScheme';
+import { useColorScheme } from 'react-native';
+import { Stack } from 'expo-router';
+import { UsersProvider } from '../components/UsersContext';
+import React from 'react';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -14,45 +14,55 @@ export {
 
 export const unstable_settings = {
   // Ensure that reloading on `/modal` keeps a back button present.
-  initialRouteName: '(tabs)',
+  initialRouteName: 'index',
 };
-
-// Prevent the splash screen from auto-hiding before asset loading is complete.
-SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+    PopinsMedium: require('../assets/fonts/Poppins-Medium.ttf'),
+    PopinsRegular: require('../assets/fonts/Poppins-Regular.ttf'),
+    PopinsBold: require('../assets/fonts/Poppins-Bold.ttf'),
     ...FontAwesome.font,
   });
-
   // Expo Router uses Error Boundaries to catch errors in the navigation tree.
   useEffect(() => {
     if (error) throw error;
   }, [error]);
 
-  useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
-    }
-  }, [loaded]);
-
-  if (!loaded) {
-    return null;
-  }
-
-  return <RootLayoutNav />;
+  return (
+    <>
+      {/* Keep the splash screen open until the assets have loaded. In the future, we should just support async font loading with a native version of font-display. */}
+      {loaded && !error && <RootLayoutNav />}
+      {}
+    </>
+  );
 }
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
-
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-      </Stack>
-    </ThemeProvider>
+    <>
+      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <UsersProvider>
+            <Stack>
+              <Stack.Screen name="index" options={{ headerShown: false }} />
+              <Stack.Screen name="register/index" options={{ headerShown: false }} />
+              <Stack.Screen name="register/avatar" options={{ headerShown: false }} />
+              <Stack.Screen name="register/age" options={{ headerShown: false }} />
+              <Stack.Screen name="register/name" options={{ headerShown: false }} />
+              <Stack.Screen name="register/email" options={{ headerShown: false }} />
+              <Stack.Screen name="register/pass" options={{ headerShown: false }} />
+              <Stack.Screen name="user/[id]" options={{ headerShown: false }} />
+              <Stack.Screen name="user/message/[id]" options={{ headerShown: false }} />
+              <Stack.Screen name="user/visio/[id]" options={{ headerShown: false }} />
+              <Stack.Screen name="parameter" options={{ headerShown: false }} />
+              <Stack.Screen name="game/list" options={{ headerShown: false }} />
+              <Stack.Screen name="game/infos" options={{ headerShown: false }} />
+              <Stack.Screen name="game/store" options={{ headerShown: false }} />
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            </Stack>
+        </UsersProvider>
+      </ThemeProvider>
+    </>
   );
 }
