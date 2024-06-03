@@ -12,8 +12,8 @@ const NameScreen = () => {
     const handleNameChange = (text: string) => {
         setName(text);
         if(text.length > 0) {
-            const user = { name: text };
-            const currentUser = state.user;   
+            const user = { username: text };
+            const currentUser = state.user;
             dispatch({ type: "USER_FETCH", payload: Object.assign(currentUser, user) });
         }        
     };

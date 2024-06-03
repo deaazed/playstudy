@@ -7,30 +7,41 @@ import { Key, useEffect, useState } from 'react';
 import { router, usePathname } from 'expo-router';
 import { useUsers } from '../../components/UsersContext';
 import React from 'react';
+import { getUsers } from '@/data/user';
+import Loader from '@/components/Loader';
 
 export default function VisioScreen() {
   const { state, dispatch } = useUsers();
-  const [clickedUser, setClickedUser] = useState<User | undefined>(undefined);
+  const [clickedUser, setClickedUser] = useState<Parse.Object | undefined>(undefined);
   const [userListe, setUserListe] = useState<Array<JSX.Element>>([]);
-  let users = [];
   
   const fetchUsers = async () => {
     dispatch({ type: "USERS_PROCESS_REQUEST"});
-    if(state.users.length > 0) {
-      users = state.users;
+    if(state.users.length == 0) {
+      getUsers().then((users : Parse.Object[] | undefined) => {
+        dispatch({ type: "USERS_FETCH", payload: users });
+      });
     }
-    // const response = await fetch('http://localhost:3000/users');
-    const response = { json: () => Promise.resolve(arrayUsers) };
-    users = await response.json();
-    dispatch({ type: "USERS_FETCH", payload: users });
   }
 
   useEffect(() => {
-    fetchUsers();
+    const fetchUserList = async () => {
+      try {
+        await fetchUsers();
+      } catch (error) {
+        console.error('Error fetching users:', error);
+      }
+    };
+
+    fetchUserList();
   }, []);
   
   useEffect(() => {
-    setUserListe(state.users.map((user: User, index: Key | null | undefined) => <UserVisio key={index} user={user} onPress={() => setClickedUser(user)} style={undefined} />));
+    if(state.users.length === 0) return;
+    else {
+      const otherUsers = state.users.filter((user: Parse.Object) => user && user.id !== state.user.id);
+      setUserListe(otherUsers.map((user: Parse.Object, index: Key | null | undefined) => <UserVisio key={index} user={user} onPress={() => setClickedUser(user)} style={undefined} />));
+    }
   }, [state.users]);
 
   useEffect(() => {
@@ -40,9 +51,12 @@ export default function VisioScreen() {
   }, [clickedUser]);
 
   return (
+    <>
+    {userListe.length === 0 && <Loader />}
     <SafeAreaView style={[styles.container, { padding: 0 }]}>
       <ScrollView style={{width: '100%', paddingHorizontal: 20}} showsVerticalScrollIndicator={false}>{userListe}</ScrollView>
     </SafeAreaView>
+    </>
   );
 }
 

@@ -20,7 +20,7 @@ export default function ProfilScreen(props : {user? : object}) {
       </View>
       <View style={{flex:0.4, top: 30}}>
         <View style={styles.avatar}>
-          <AvatarImage size={120} avatarImageSource={Avatars[3].image}/>
+          <AvatarImage size={120} avatar={Avatars[3].image}/>
           <View style={styles.editBtn}>
             <FontAwesome name="pen" size={12} color="#fff"/>
           </View>

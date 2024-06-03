@@ -1,7 +1,6 @@
 import { View, Text as DefaulText, StyleSheet, TouchableOpacity } from "react-native";
 import { ScrollView, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Text } from "../components/Themed";
-import { User } from "../services/Interfaces";
 import ProfileForme from '../assets/images/forme-inverted.svg';
 import AvatarImage from "./AvatarImage";
 import FontAwesome from '@expo/vector-icons/FontAwesome5';
@@ -9,8 +8,7 @@ import HorizontalDivider from "./HorizontalDivider";
 import { router } from "expo-router";
 import React from "react";
 
-export default function UserProfile({ user }: { user: User | undefined}) {
-    const defaultAvatarImageSource = require('../assets/images/notFoundUserImage.png');
+export default function UserProfile({ user }: { user: Parse.Object | undefined}) {
     function handleGoMessage(): void {
         router.push(`/user/message/${user?.id}`);
     }
@@ -28,11 +26,11 @@ export default function UserProfile({ user }: { user: User | undefined}) {
             <View style={{ marginTop: 20, width: "100%", paddingHorizontal: 20}}>
                 <View style={{flexDirection: 'row', alignContent: 'flex-start', alignItems: 'center', gap: 20, marginVertical: 10}}>
                     <View style={styles.avatar}>
-                        <AvatarImage size={100} avatarImageSource={user?.avatarImage ?? defaultAvatarImageSource}/>
+                        <AvatarImage size={100} avatar={user?.get('avatar')}/>
                     </View>
                     <View style={{top: -10, justifyContent: 'flex-start'}}>
-                        <Text style={{ fontFamily: 'PopinsMedium', fontSize: 16, color: "#263238" }}>{user?.name}</Text>
-                        <Text style={{ fontFamily: 'PopinsRegular', fontSize: 13, color: "#898989" }}>{user?.disponibility}</Text>
+                        <Text style={{ fontFamily: 'PopinsMedium', fontSize: 16, color: "#263238" }}>{user?.get('username')}</Text>
+                        <Text style={{ fontFamily: 'PopinsRegular', fontSize: 13, color: "#898989" }}>{user?.get('disponibility')}</Text>
                     </View>
                 </View>
                 <HorizontalDivider width={'90%'} borderWidth={0.5} />

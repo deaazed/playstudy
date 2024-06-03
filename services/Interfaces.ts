@@ -1,6 +1,29 @@
 import { ImageSourcePropType, ViewStyle } from "react-native";
 import { Disponibility } from "./Enums";
 
+export interface Avatar {
+    id: string,
+    image: Parse.File
+}
+
+export interface ParseUser {
+    id: string,
+    username: string,
+    age: number,
+    email: string,
+    password: string,
+    disponibility: string,
+    avatar: Parse.Object | undefined
+}
+
+export interface Message {
+    id: number,
+    content: string,
+    sender: string,
+    receiver: string,
+    createdAt: Date | undefined
+}
+
 export interface User {
     id: number,
     name: string,
@@ -37,7 +60,7 @@ export interface CoinStoreItemProps {
 
 export interface UserItemProps {
     style: ViewStyle | undefined,
-    user: User,
+    user: Parse.Object,
     onPress: () => void
 }
 

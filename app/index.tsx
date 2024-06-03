@@ -6,14 +6,48 @@ import GoogleLogo from '../assets/images/google-logo.svg';
 import Tutorial from '../components/Tutorial';
 import { useEffect, useRef, useState } from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome5';
-import { Link } from 'expo-router';
+import { Link, router } from 'expo-router';
 import React from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Parse from 'parse/react-native';
+import "react-native-get-random-values";
+import { userLogin } from '@/data/user';
+import { useUsers } from '@/components/UsersContext';
+
+//Before using the SDK...
+Parse.setAsyncStorage(AsyncStorage);
+// Remember to inform BOTH the Back4App Application ID AND the JavaScript KEY
+Parse.initialize('ezS1JuIsd3961yVM1VSDz7nKjUlBO4FfFD3uRgV8', 'LOcq7dYtF2ZPzBM8g9IIerkJqF6JdOOdCcsE7Ef0');
+//Point to Back4App Parse API address 
+Parse.serverURL = 'https://parseapi.back4app.com';
 
 export default function WelcomeScreen() {
+  const { dispatch } = useUsers();
   const slideAnim = useRef(new Animated.Value(300)).current;
   const [reduceWelcome, setReduceWelcome] = useState<boolean>(false);
   const [hidePassword, setHidePassWord] = useState<boolean>(true);
   const [firstOpen, setFirstOpen] = useState<boolean>(true);
+  const [email, setEmail] = useState<string>('');
+  const [password, setPassword] = useState<string>('');
+
+  const hangleLogin = async () => {
+    userLogin({
+      email: email, password: password,
+      id: '',
+      username: '',
+      age: 0,
+      disponibility: '',
+      avatar: undefined
+    }).then((user: Parse.User | undefined) => {
+      if(user) {
+        console.log('User logged in', user);
+        dispatch({ type: "USER_FETCH", payload: user });
+        router.push('/(tabs)/exercises');
+      } else {
+        console.error('User not found');
+      }
+    });
+  }
 
   useEffect(() => {
     Animated.timing(slideAnim, {
@@ -47,18 +81,20 @@ export default function WelcomeScreen() {
         <TextInput
           style={styles.input}
           placeholder='jean.durand@gmail.com'
+          onChange={(event) => setEmail(event.nativeEvent.text)}
         />
         <SafeAreaView style={[styles.input, {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'}]}>
           <TextInput
             secureTextEntry={hidePassword}
             placeholder='••••••••••••••••'
             style={{ height:50, width: '90%' }}
+            onChange={(event) => setPassword(event.nativeEvent.text)}
           />
           <Pressable  style={{ width: '10%', alignItems:'center', justifyContent:'center', height:50 }} onPress={() => setHidePassWord(!hidePassword)}><FontAwesome name={hidePassword ? "eye" : "eye-slash"} size={18} color="rgba(60, 60, 67, 0.6)"/></Pressable>
         </SafeAreaView>
-        <Link href='/(tabs)/exercises' style={[styles.buttonConnect, {color: '#fff', fontSize: 22 }]}>
-          Se connecter
-        </Link>
+        <Pressable onPress={hangleLogin} style={styles.buttonConnect}>
+          <Text style={{color: '#fff', fontSize: 18}}>Se connecter</Text>
+        </Pressable>
         <Pressable style={styles.buttonConnectGoogle}>
           <GoogleLogo width={14} height={14}/>
           <Text lightColor='#000' darkColor='#fff' style={{ fontSize: 13 }}>Connectez-vous avec Google</Text>
@@ -110,12 +146,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20
   },
   buttonConnect: {
-    textAlignVertical: 'center',
-    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '50%',
     height: 50,
     backgroundColor: '#3444F1',
-    borderRadius: 40,
-    textAlign: 'center'
+    borderRadius: 40
   },
   buttonConnectGoogle: {
     display: 'flex',

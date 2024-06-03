@@ -1,16 +1,23 @@
 import React from 'react';
-import { View, FlatList, Image, TouchableOpacity, StyleSheet, Text, ImageSourcePropType } from 'react-native';
-import Avatars from '../../constants/Avatars';
+import { View, FlatList, Image, TouchableOpacity, StyleSheet, Text } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import TopBarCustom from '../../components/TopBarCustom';
+import TopBarCustom from '@/components/TopBarCustom';
 import { router } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome5';
-import { useUsers } from '../../components/UsersContext';
+import { useUsers } from '@/components/UsersContext';
+import { getAvatars } from '@/data/avatar';
+import { Avatar } from '@/services/Interfaces';
 
 const AvatarScreen = () => {
     const { state, dispatch } = useUsers();
-    const [selectedAvatar, setSelectedAvatar] = React.useState(null);
-    const renderAvatarItem = ({ item }: { item: any }) => {
+    const [selectedAvatar, setSelectedAvatar] = React.useState<string|null>(null);
+    const [avatars, setAvatars] = React.useState<Parse.Object[]|undefined>([]);
+
+    React.useEffect(() => {
+        getAvatars().then((avatars) => setAvatars(avatars));
+    }, []);
+
+    const renderAvatarItem = ({ item }: { item: Avatar }) => {
         return (
             <View style={styles.avatarItem}>
                 { selectedAvatar === item.id &&
@@ -19,17 +26,17 @@ const AvatarScreen = () => {
                     </View>
                 }
                 <TouchableOpacity style={[styles.avatarContainer, { borderColor : selectedAvatar === item.id ? '#3444F1' : '#cecece' }]} onPress={() => handleAvatarPress(item)}>
-                    <Image source={item.image} style={styles.avatarImage} />
+                    <Image source={{uri: item.image.url()}} style={styles.avatarImage} />
                 </TouchableOpacity>
             </View>
         );
     };
 
-    const handleAvatarPress = (avatar: { id: any, image: NodeRequire}) => {
+    const handleAvatarPress = (avatar: Avatar) => {
         // Handle avatar press event here
         setSelectedAvatar(avatar.id);
-        const user = { avatar: avatar.image };
-        const currentUser = state.user;   
+        const user = { avatar: avatars?.find((a) => a.id === avatar.id)};
+        const currentUser = state.user;
         dispatch({ type: "USER_FETCH", payload: Object.assign(currentUser, user) });
     };
 
@@ -41,7 +48,7 @@ const AvatarScreen = () => {
                 <View style={{ flex: 1 }}>
                     <Text style={styles.title}>Choisis ton avatar</Text>
                     <FlatList
-                        data={Avatars}
+                        data={avatars && [...avatars.map((avatar : Parse.Object) => ({ id: avatar.id, image: avatar.get('image') }))]}
                         numColumns={3}
                         renderItem={renderAvatarItem}
                         keyExtractor={(item) => item.id.toString()}

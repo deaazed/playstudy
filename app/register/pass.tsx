@@ -3,6 +3,7 @@ import { View, Text, TextInput, StyleSheet, TouchableOpacity } from 'react-nativ
 import { useUsers } from '../../components/UsersContext';
 import { router } from 'expo-router';
 import TopBarCustom from '../../components/TopBarCustom';
+import { userSignup } from '@/data/user';
 
 
 const PassScreen = () => {
@@ -12,13 +13,20 @@ const PassScreen = () => {
     const handlePassChange = (text: string) => {
         setPass(text);
         if(text.length > 0) {
-            const user = { pass: text };
+            const user = { password: text };
             const currentUser = state.user;
             dispatch({ type: "USER_FETCH", payload: Object.assign(currentUser, user) });
         }        
     };
     const handleSubmit = () => {
-        router.push("/(tabs)/exercises");
+        userSignup(state.user).then((user : Parse.User | undefined) => {
+            if(user) {
+                dispatch({ type: "USER_FETCH", payload: user });
+                router.push("/(tabs)/exercises");
+            } else {
+                console.error('Error while creating user');
+            }
+        });
     };
 
     return (
