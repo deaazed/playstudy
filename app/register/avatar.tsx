@@ -5,7 +5,7 @@ import TopBarCustom from '@/components/TopBarCustom';
 import { router } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome5';
 import { useUsers } from '@/components/UsersContext';
-import { getAvatars } from '@/data/avatar';
+import { getAvatars } from '@/models';
 import { Avatar } from '@/services/Interfaces';
 
 const AvatarScreen = () => {

@@ -14,6 +14,7 @@ export default function MessageScreen() {
     const params = useLocalSearchParams();
     const { state, dispatch } = useUsers();
     const [user, setUser] = useState<Parse.Object | undefined>(undefined);
+    const messageRef = React.useRef<TextInput>(null);
     const [message, setMessage] = useState<string>('');
     const [serverState, setServerState] = React.useState('Loading...');
     const [serverMessages, setServerMessages] = React.useState<Message[]>();
@@ -57,13 +58,7 @@ export default function MessageScreen() {
         router.push(`/user/visio/${user?.id}`);
     }
 
-    function handledTextChange(event: any): void {
-      setMessage(event.nativeEvent.text);
-    }
-
     function handleMessageSend(): void {
-      console.log(user);
-      
       if (user) {
         const payload : Message = {
           id: Math.random(),
@@ -73,15 +68,15 @@ export default function MessageScreen() {
           createdAt: new Date()
         };
         ws.send(JSON.stringify(payload));
-        setMessage('');
+        messageRef.current?.clear();
       }
     }
 
-    const handleKeyPress = (event: any) => {
-      if (event.key === 'Enter') {
-        handleMessageSend();
-      }
-    };
+    // const handleKeyPress = (event: any) => {
+    //   if (event.key === 'Enter') {
+    //     handleMessageSend();
+    //   }
+    // };
 
     useEffect(() => {
         if (params.id !== undefined) {
@@ -126,7 +121,7 @@ export default function MessageScreen() {
           </View>
           <View style={{flex: 0.1, width: '100%', paddingHorizontal: 20, backgroundColor: '#fff'}}>
             <View style={styles.messageContainer}>
-              <TextInput value={message} onChange={(e) => handledTextChange(e)} style={styles.messageInput} placeholder="Ecrire un message..." />
+              <TextInput ref={messageRef} onChangeText={ (e) => setMessage(e)} style={styles.messageInput} placeholder="Ecrire un message..." />
               <Pressable style={styles.sendButton} onPress={handleMessageSend}>
                 <Entypo name="paper-plane" size={22} color="white" />
               </Pressable>

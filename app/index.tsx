@@ -1,9 +1,9 @@
 import { StatusBar } from 'expo-status-bar';
 import { Animated, Vibration, Platform, StyleSheet, View as DefaultView, SafeAreaView, TextInput, Pressable, Keyboard } from 'react-native';
-import { Text, View } from '../components/Themed';
-import WelcomeSvg from '../assets/images/broimage-welcome.svg';
-import GoogleLogo from '../assets/images/google-logo.svg';
-import Tutorial from '../components/Tutorial';
+import { Text, View } from '@/components/Themed';
+import WelcomeSvg from '@/assets/images/broimage-welcome.svg';
+import GoogleLogo from '@/assets/images/google-logo.svg';
+import Tutorial from '@/components/Tutorial';
 import { useEffect, useRef, useState } from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome5';
 import { Link, router } from 'expo-router';
@@ -11,16 +11,16 @@ import React from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Parse from 'parse/react-native';
 import "react-native-get-random-values";
-import { userLogin } from '@/data/user';
+import { userLogin } from '@/models';
 import { useUsers } from '@/components/UsersContext';
+import * as config from '@/constants/Config';
 
 //Before using the SDK...
 Parse.setAsyncStorage(AsyncStorage);
 // Remember to inform BOTH the Back4App Application ID AND the JavaScript KEY
-Parse.initialize('ezS1JuIsd3961yVM1VSDz7nKjUlBO4FfFD3uRgV8', 'LOcq7dYtF2ZPzBM8g9IIerkJqF6JdOOdCcsE7Ef0');
+Parse.initialize(config.BACK4APP_APP_ID, config.BACK4APP_JS_KEY);
 //Point to Back4App Parse API address 
-Parse.serverURL = 'https://parseapi.back4app.com';
-
+Parse.serverURL = config.BACK4APP_SERVER_URL;
 export default function WelcomeScreen() {
   const { dispatch } = useUsers();
   const slideAnim = useRef(new Animated.Value(300)).current;

@@ -1,21 +1,24 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Camera, CameraType } from 'expo-camera';
+import { Camera, CameraView } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 
 const FaceTimeScreen = () => {
-    const [type, setType] = React.useState(CameraType.front);
-    const [permission, requestPermission] = Camera.useCameraPermissions();
+    const [hasPermission, setHasPermission] = React.useState<boolean | null>(null);
 
-    if(!permission) {
-        requestPermission();
-    } else if(!permission.granted) {
-        router.back();
+    React.useEffect(() => {
+        (async () => {
+            const { status } = await Camera.requestCameraPermissionsAsync();
+            setHasPermission(status === 'granted');
+        })();
+    }, []);
+
+    if (hasPermission === null) {
+        return <View />;
     }
-
-    const handleCameraSwitch = () => {
-        setType(type === CameraType.back ? CameraType.front : CameraType.back);
+    if (hasPermission === false) {
+        return <Text>No access to camera</Text>;
     }
 
     return (
@@ -26,8 +29,7 @@ const FaceTimeScreen = () => {
             </View>
 
             <View style={styles.cameraContainer}>
-                {/* Front camera */}
-                <Camera style={styles.camera} type={type} />
+                <CameraView style={styles.camera} facing={'front'} />
             </View>
             
             {/* Close button */}

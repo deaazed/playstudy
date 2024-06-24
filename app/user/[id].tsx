@@ -3,12 +3,11 @@ import { useEffect, useState } from 'react';
 import UserProfile from '../../components/UserProfil';
 import { useLocalSearchParams } from 'expo-router';
 import { useUsers } from '../../components/UsersContext';
-import { User } from '../../services/Interfaces';
 import { View } from '../../components/Themed';
 import TopBarCustom from '../../components/TopBarCustom';
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
-import { getUser, getUsers } from '@/data/user';
+import { getUser, getUsers } from '@/models';
 import Loader from '@/components/Loader';
 
 export default function UserScreen() {
@@ -26,12 +25,12 @@ export default function UserScreen() {
         } else {
           let user = state.users.find((user: Parse.Object) => user.id === params.id);
           if(user) setUser(user);
-            else {
-              getUser(params.id as string).then((user : Parse.Object | undefined) => {
-                if(user) setUser(user);
-                else console.error('Error while fetching user');
-              });
-            }
+          else {
+            getUser(params.id as string).then((user : Parse.Object | undefined) => {
+              if(user) setUser(user);
+              else console.error('Error while fetching user');
+            });
+          }
         }
       }      
     }, [params.id]);

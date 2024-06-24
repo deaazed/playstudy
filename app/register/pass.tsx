@@ -3,7 +3,7 @@ import { View, Text, TextInput, StyleSheet, TouchableOpacity } from 'react-nativ
 import { useUsers } from '../../components/UsersContext';
 import { router } from 'expo-router';
 import TopBarCustom from '../../components/TopBarCustom';
-import { userSignup } from '@/data/user';
+import { userSignup } from '@/models';
 
 
 const PassScreen = () => {

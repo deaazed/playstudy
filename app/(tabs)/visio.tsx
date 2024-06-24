@@ -1,13 +1,10 @@
 import { StyleSheet, SafeAreaView, ScrollView} from 'react-native';
-import { User } from '../../services/Interfaces';
-import { Disponibility } from '../../services/Enums';
-import arrayUsers from '../../constants/temp/Users';
-import UserVisio from '../../components/UserVisio';
+import UserVisio from '@/components/UserVisio';
 import { Key, useEffect, useState } from 'react';
-import { router, usePathname } from 'expo-router';
-import { useUsers } from '../../components/UsersContext';
+import { router } from 'expo-router';
+import { useUsers } from '@/components/UsersContext';
 import React from 'react';
-import { getUsers } from '@/data/user';
+import { getUsers } from '@/models';
 import Loader from '@/components/Loader';
 
 export default function VisioScreen() {
@@ -17,27 +14,15 @@ export default function VisioScreen() {
   
   const fetchUsers = async () => {
     dispatch({ type: "USERS_PROCESS_REQUEST"});
-    if(state.users.length == 0) {
+    if(state.users.length === 0 || state.users === undefined) {
       getUsers().then((users : Parse.Object[] | undefined) => {
         dispatch({ type: "USERS_FETCH", payload: users });
       });
     }
   }
-
-  useEffect(() => {
-    const fetchUserList = async () => {
-      try {
-        await fetchUsers();
-      } catch (error) {
-        console.error('Error fetching users:', error);
-      }
-    };
-
-    fetchUserList();
-  }, []);
   
   useEffect(() => {
-    if(state.users.length === 0) return;
+    if(state.users.length === 0) fetchUsers();
     else {
       const otherUsers = state.users.filter((user: Parse.Object) => user && user.id !== state.user.id);
       setUserListe(otherUsers.map((user: Parse.Object, index: Key | null | undefined) => <UserVisio key={index} user={user} onPress={() => setClickedUser(user)} style={undefined} />));

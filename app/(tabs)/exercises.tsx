@@ -1,21 +1,43 @@
-import { StyleSheet, View as DefaultView, Text as DefaultText, ScrollView, TouchableOpacity} from 'react-native';
-import { Text, View } from '../../components/Themed';
-import Astronot from '../../assets/images/Astronot.svg';
-import Coin from '../../assets/images/Coin.svg';
-import Guitar from '../../assets/images/guitar.svg';
-import Art from '../../assets/images/art.svg';
-import Camembert from '../../assets/images/camembert.svg';
-import Thematique from '../../components/ThematiqueView';
+import { StyleSheet, View as DefaultView, Text as DefaultText, ScrollView, TouchableOpacity, BackHandler } from 'react-native';
+import { Text, View } from '@/components/Themed';
+import { Coin, Guitar, Camembert, Art, Astronot } from '@/assets/images';
+import Thematique from '@/components/ThematiqueView';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import HistoriqueThematique from '../../components/HistoriqueThematique';
-import DragIndicator from '../../components/DragIndicator';
+import HistoriqueThematique from '@/components/HistoriqueThematique';
+import DragIndicator from '@/components/DragIndicator';
 import { router } from 'expo-router';
-import { useUsers } from '../../components/UsersContext';
+import { useUsers } from '@/components/UsersContext';
 import React from 'react';
+import { userLogout } from '@/models';
+import { Modal } from '@/components/Modal';
 
 export default function ExercisesSreen() {
   const { state, dispatch } = useUsers();
+  const [modalVisible, setModalVisible] = React.useState(false);
+
+  const handleGoBack = () => {
+    userLogout().then(() => {
+      dispatch({ type: 'LOGOUT' });
+      console.log(state);
+      router.push('/');
+    });
+  }
+
+  React.useEffect(() => {
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => { setModalVisible(true); return true });
+    return () => backHandler.remove();
+  }, []);
+
   return (
+    <>
+    <Modal text={
+      {
+        title: 'Déconnexion',
+        content: `C'était un plaisir ${state.user.get('username')}! A une prochaine fois!`,
+        validate: 'Quitter',
+        cancel: 'Annuler'
+      }
+    } status={modalVisible} callback={[handleGoBack, () => setModalVisible(false)]} />
     <View style={styles.container}>
         <DefaultView style={styles.containerEarning}>
           
@@ -25,11 +47,11 @@ export default function ExercisesSreen() {
         </DefaultView>
       
       <DefaultView style={styles.upperPart}>
-        <DefaultView style={{ width: '60%'}}>
-          <DefaultText style={{color: "#fff", fontFamily: 'PopinsMedium', paddingVertical: 20, fontSize:24}}>Bonjour, { state.user?.name ?? 'Asthino' }</DefaultText>
-          <DefaultText style={{color: "#fff", fontSize:13, fontFamily: 'PopinsRegular'}}>Quelle thématique aimerais-tu choisir ?</DefaultText>
+        <DefaultView style={{ flex: 0.6, justifyContent: 'center', paddingLeft: 20}}>
+          <DefaultText style={{flexWrap: "nowrap",color: "#fff", fontFamily: 'PopinsMedium', fontSize:24}}>Bonjour, { state.user?.get('username') }</DefaultText>
+          <DefaultText style={{flexWrap: "wrap", color: "#fff", fontSize:13, fontFamily: 'PopinsRegular'}}>Quelle thématique aimerais-tu choisir ?</DefaultText>
         </DefaultView>
-        <Astronot />
+        <DefaultView style={{ justifyContent: 'center', flex: 0.4 }}><Astronot/></DefaultView>
       </DefaultView>
       <View lightColor='#fff' style={styles.containerBody}>
         <DragIndicator extraStyle={{ backgroundColor: 'rgba(38, 50, 56, 0.43)', alignSelf: 'center'}} />
@@ -48,6 +70,7 @@ export default function ExercisesSreen() {
         </View>
       </View>
     </View>
+    </>
   );
 }
 
@@ -68,10 +91,8 @@ const styles = StyleSheet.create({
   },
   upperPart: {
     flex: 0.25,
-    justifyContent: 'center',
     flexDirection: 'row',
-    paddingLeft: 50,
-    paddingRight: 30
+    width: '100%'
   },
   containerBody: {
     flex: 0.7,
