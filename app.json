@@ -36,7 +36,8 @@
       "expo-camera",
       "expo-splash-screen",
       "expo-system-ui",
-      "expo-font"
+      "expo-font",
+      "@react-native-google-signin/google-signin"
     ],
     "experiments": {
       "typedRoutes": true

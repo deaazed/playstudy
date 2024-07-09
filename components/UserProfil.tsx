@@ -7,8 +7,11 @@ import FontAwesome from '@expo/vector-icons/FontAwesome5';
 import HorizontalDivider from "./HorizontalDivider";
 import { router } from "expo-router";
 import React from "react";
+import { Disponibility } from "@/services/Enums";
 
 export default function UserProfile({ user }: { user: Parse.Object | undefined}) {
+    const disponibility = Disponibility[user?.get('disponibility') as keyof typeof Disponibility];
+    const isAvailable = user?.get('disponibility') === 'A';
     function handleGoMessage(): void {
         router.push(`/user/message/${user?.id}`);
     }
@@ -30,7 +33,7 @@ export default function UserProfile({ user }: { user: Parse.Object | undefined})
                     </View>
                     <View style={{top: -10, justifyContent: 'flex-start'}}>
                         <Text style={{ fontFamily: 'PopinsMedium', fontSize: 16, color: "#263238" }}>{user?.get('username')}</Text>
-                        <Text style={{ fontFamily: 'PopinsRegular', fontSize: 13, color: "#898989" }}>{user?.get('disponibility')}</Text>
+                        <Text style={{ fontFamily: 'PopinsRegular', fontSize: 13, color: "#898989" }}>{Disponibility[user?.get('disponibility') as keyof typeof Disponibility]}</Text>
                     </View>
                 </View>
                 <HorizontalDivider width={'90%'} borderWidth={0.5} />
@@ -59,7 +62,7 @@ export default function UserProfile({ user }: { user: Parse.Object | undefined})
                                 <Text style={styles.optionText}>Envoyer un message</Text>
                                 <FontAwesome name="chevron-right" size={14} color="#cecece" />
                             </TouchableOpacity>
-                            <TouchableOpacity onPress={() => handleGoVisio()} style={styles.optionContainer}>
+                            <TouchableOpacity disabled={!isAvailable} onPress={() => handleGoVisio()} style={styles.optionContainer}>
                                 <View style={[styles.iconeAction, { backgroundColor: "#1FFF35" }]}>
                                     <FontAwesome name="video" size={24} color="#fff" />
                                 </View>

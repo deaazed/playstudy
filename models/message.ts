@@ -1,9 +1,10 @@
 import Parse from 'parse/react-native';
 import { ParseUser as User } from "@/services/Interfaces";
 
-export const getMessagesByOwner = async (user: User) => {
-    const query = new Parse.Query('Message');
-    query.equalTo('owner', user);
+export const getMessagesByRoom = async (room: Parse.Object) => {
+    const Message : Parse.ObjectConstructor = Parse.Object.extend('Message');
+    const query = new Parse.Query(Message);
+    query.equalTo('room', room);
     return query.find();
 };
 

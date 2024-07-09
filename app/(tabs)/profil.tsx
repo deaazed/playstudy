@@ -3,16 +3,26 @@ import ProfileForme from '../../assets/images/profile-forme.svg';
 import FontAwesome from '@expo/vector-icons/FontAwesome5';
 import React, { useState } from 'react';
 import AvatarImage from '../../components/AvatarImage';
-import Avatars from '../../constants/Avatars';
+import { useUsers } from '@/components/UsersContext';
 
-export default function ProfilScreen(props : {user? : object}) {
+export default function ProfilScreen() {
+  const { state } = useUsers();
   const [hidePassword, setHidePassWord] = useState<boolean>(true);
   const [nameValue, onChangeNameValue] = useState('Asthino');
   const [pseudoValue, onChangePseudoValue] = useState('Astty');
   const [emailValue, onChangeEmailValue] = useState('astty@playmail.com');
   const [passwordValue, onChangePasswordValue] = useState('123456');
   const [ageValue, onChangeAgeValue] = useState('23');
-  const avatarImage = require('../../assets/images/profile.jpg');
+
+  React.useEffect(() => {
+    if(state.user) {
+      onChangeNameValue(state.user.get('username'));
+      onChangePseudoValue(state.user.get('username'));
+      onChangeEmailValue(state.user.get('email'));
+      onChangePasswordValue(state.user.get('password'));
+      onChangeAgeValue(state.user.get('age')?.toString()??"");
+    }
+  }, []);
   return (
     <View style={styles.container}>
       <View style={styles.forme}>
@@ -20,7 +30,7 @@ export default function ProfilScreen(props : {user? : object}) {
       </View>
       <View style={{flex:0.4, top: 30}}>
         <View style={styles.avatar}>
-          <AvatarImage size={120} avatar={Avatars[3].image}/>
+          <AvatarImage size={120} avatar={state.user.get('avatar')}/>
           <View style={styles.editBtn}>
             <FontAwesome name="pen" size={12} color="#fff"/>
           </View>

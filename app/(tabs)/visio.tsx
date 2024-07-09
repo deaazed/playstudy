@@ -1,4 +1,4 @@
-import { StyleSheet, SafeAreaView, ScrollView} from 'react-native';
+import { StyleSheet, SafeAreaView, ScrollView, NativeSyntheticEvent, NativeScrollEvent, RefreshControl} from 'react-native';
 import UserVisio from '@/components/UserVisio';
 import { Key, useEffect, useState } from 'react';
 import { router } from 'expo-router';
@@ -11,6 +11,7 @@ export default function VisioScreen() {
   const { state, dispatch } = useUsers();
   const [clickedUser, setClickedUser] = useState<Parse.Object | undefined>(undefined);
   const [userListe, setUserListe] = useState<Array<JSX.Element>>([]);
+  const [refreshing, setRefreshing] = React.useState(false);
   
   const fetchUsers = async () => {
     dispatch({ type: "USERS_PROCESS_REQUEST"});
@@ -35,12 +36,26 @@ export default function VisioScreen() {
     }
   }, [clickedUser]);
 
+  const onRefresh = React.useCallback(() => {
+    setRefreshing(true);
+    dispatch({ type: "USERS_CLEAR" });
+    setRefreshing(false);
+  }, []);
+
   return (
     <>
-    {userListe.length === 0 && <Loader />}
-    <SafeAreaView style={[styles.container, { padding: 0 }]}>
-      <ScrollView style={{width: '100%', paddingHorizontal: 20}} showsVerticalScrollIndicator={false}>{userListe}</ScrollView>
-    </SafeAreaView>
+      {userListe.length === 0 && <Loader />}
+      <SafeAreaView style={[styles.container, { padding: 0 }]}>
+        <ScrollView
+          style={{ width: '100%', paddingHorizontal: 20 }}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+        >
+          {userListe}
+        </ScrollView>
+      </SafeAreaView>
     </>
   );
 }

@@ -5,23 +5,23 @@ import { GameItemProps } from '../services/Interfaces';
 import { TouchableOpacity } from 'react-native-gesture-handler';
 
 
-const GameItem: React.FC<GameItemProps> = ({ game, onPress }) => {
-    const GameImage = game.image ? { uri: game.image } : require('../assets/images/fire.png');
-
+const GameItem = ({ game, onPress, level, progress } : { game: Parse.Object, onPress : Function, level: number, progress: number}) => {
+    const GameImage = game.get('image') ? { uri: game.get('image').url() } : require('../assets/images/fire.png');
+    const stages = 10;
     return (
         <TouchableOpacity onPress={() => onPress()} style={styles.container}>
             <View style={styles.leftContainer}>
-                <View style={[styles.leftInner, { backgroundColor: game.color }]}>
+                <View style={[styles.leftInner, { backgroundColor: game.get('color') }]}>
                     <Image source={GameImage} style={styles.image} />
-                    <Text style={styles.levelText}>Niv {game.level}</Text>
+                    <Text style={styles.levelText}>Niv {level ?? 1}</Text>
                 </View>
             </View>
             <View style={styles.rightContainer}>
-                <Text style={styles.nameText}>{game.name}</Text>
-                <Text style={styles.descriptionText}>{game.description}</Text>
+                <Text style={styles.nameText}>{game.get('name')}</Text>
+                <Text style={styles.descriptionText}>{game.get('description')}</Text>
                 <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
-                    <Progressbar type="rectangular" text="" value={(game.progress / game.stages * 100) ?? 0} barColor={game.color} style={{width: '80%'}} />
-                    <Text style={{ color: '#898A8D', fontSize: 10 }}>{game.progress + '/' + game.stages}</Text>
+                    <Progressbar type="rectangular" text="" value={(progress / stages * 100) ?? 0} barColor={game.get('color')} style={{width: '80%'}} />
+                    <Text style={{ color: '#898A8D', fontSize: 10 }}>{progress + '/' + stages}</Text>
                 </View>
             </View>
         </TouchableOpacity>

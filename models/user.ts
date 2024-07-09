@@ -1,9 +1,11 @@
 import Parse from 'parse/react-native';
 import { ParseUser as User } from "@/services/Interfaces";
+import { listenCallRooms, unsubscribeRoom } from '@/services/LiveQueries';
+import { getRooms } from './room';
 
 export const getMe = async () => {
     try {
-        let user: Parse.User | null = await Parse.User.currentAsync().catch((error: any) => { console.error(error); return {} as Parse.User });
+        let user: Parse.User | null = await Parse.User.currentAsync().catch((error: any) => { console.error(error); return null });
         return user;
     } catch (error: any) {
         console.error('Error while fetching current user', error);
@@ -40,7 +42,12 @@ const getUserByEmailAddress = async (email: string) => {
 
 export const userLogin = async (data : User) => {
     try {
-        const userResult: Parse.User = await Parse.User.logIn(data.email, data.password).catch((error: any) => { console.error(error); return {} as Parse.User });
+        const userResult: Parse.User|undefined = await Parse.User.logIn(data.email, data.password).catch((error: any) => undefined );
+        if(userResult) {
+            userResult?.set('disponibility', "A");
+            await userResult.save().catch((error: any) => { console.error(error); return null });
+        }
+        listenCallRooms(userResult as Parse.User);
         return userResult;
     } catch (error: any) {
         console.error('Error while logging in user', error);
@@ -49,7 +56,7 @@ export const userLogin = async (data : User) => {
 
 export const userLogout = async () => {
     try {
-        await Parse.User.logOut().catch((error: any) => { console.error(error); return {} as Parse.User });
+        await Parse.User.logOut().catch((error: any) => { console.error(error); return null });
     } catch (error: any) {
         console.error('Error while logging out user', error);
     }
@@ -74,5 +81,23 @@ export const getUsers = async () => {
         return results;
     } catch (error: any) {
         console.error('Error while fetching Users', error);
+    }
+}
+
+export const updateUser = async (data: User) => {
+    try {
+        const user: Parse.User | null = await Parse.User.currentAsync().catch((error: any) => { console.error(error); return {} as Parse.User });
+        user?.set('username', data.username);
+        user?.set('email', data.email);
+        user?.set('age', data.age);
+        user?.set('avatar', data.avatar);
+        user?.set('disponibility', data.disponibility);
+        await user?.save().catch((error: any) => { console.error(error); return null });
+
+        const temp_sub = await listenCallRooms(user as Parse.User);
+        unsubscribeRoom(temp_sub);
+    }
+    catch (error: any) {
+        console.error('Error while updating user', error);
     }
 }

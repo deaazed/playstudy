@@ -6,6 +6,7 @@ import { useColorScheme } from 'react-native';
 import { Stack } from 'expo-router';
 import { UsersProvider } from '../components/UsersContext';
 import React from 'react';
+import { GAMEIDS } from '@/constants/Config';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -40,7 +41,13 @@ export default function RootLayout() {
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
-  
+  const [gamesScreens, setGamesScreens] = React.useState<JSX.Element[]>([]);
+
+  useEffect(() => {
+    setGamesScreens(
+      Object.values(GAMEIDS).map((gameName : string, index: any) => <Stack.Screen key={index} name={`game/${gameName}`} options={{ headerShown: false }} />)
+    );
+  }, []);
   return (
     <>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
@@ -56,11 +63,13 @@ function RootLayoutNav() {
               <Stack.Screen name="user/[id]" options={{ headerShown: false }} />
               <Stack.Screen name="user/message/[id]" options={{ headerShown: false }} />
               <Stack.Screen name="user/visio/[id]" options={{ headerShown: false }} />
+              <Stack.Screen name="user/visio/incoming" options={{ headerShown: false }} />
               <Stack.Screen name="parameter" options={{ headerShown: false }} />
               <Stack.Screen name="game/list" options={{ headerShown: false }} />
               <Stack.Screen name="game/infos" options={{ headerShown: false }} />
               <Stack.Screen name="game/store" options={{ headerShown: false }} />
               <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              {gamesScreens}
             </Stack>
         </UsersProvider>
       </ThemeProvider>

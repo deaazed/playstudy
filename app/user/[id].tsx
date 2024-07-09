@@ -14,7 +14,6 @@ export default function UserScreen() {
     const params = useLocalSearchParams();
     const { state, dispatch } = useUsers();
     const [user, setUser] = useState<Parse.Object | undefined>(undefined);
-
     useEffect(() => {
       if (params.id !== undefined) {
         if(state.users.length === 0) {

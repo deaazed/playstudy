@@ -7,6 +7,7 @@ import FontAwesome from '@expo/vector-icons/FontAwesome5';
 import { useUsers } from '@/components/UsersContext';
 import { getAvatars } from '@/models';
 import { Avatar } from '@/services/Interfaces';
+import { userSignup } from '@/models';
 
 const AvatarScreen = () => {
     const { state, dispatch } = useUsers();
@@ -40,6 +41,19 @@ const AvatarScreen = () => {
         dispatch({ type: "USER_FETCH", payload: Object.assign(currentUser, user) });
     };
 
+    const handleNextPress = () => {
+        if(state.user?.password) {
+            userSignup(state.user).then((user : Parse.User | undefined) => {
+                if(user) {
+                    dispatch({ type: "USER_FETCH", payload: user });
+                    router.push("/(tabs)/exercises");
+                } else {
+                    console.error('Error while creating user');
+                }
+            });
+        } else router.push("/register/username");
+    }
+
     return (
         <>
             <StatusBar style="dark" />
@@ -56,7 +70,7 @@ const AvatarScreen = () => {
                     />
                 </View>
                 <View style={styles.buttomView}>
-                    <TouchableOpacity style={[styles.nextButton, { backgroundColor: selectedAvatar === null ? '#cecece' : '#3444F1' } ]} disabled={selectedAvatar === null} onPress={() => router.push("/register/name")}>
+                    <TouchableOpacity style={[styles.nextButton, { backgroundColor: selectedAvatar === null ? '#cecece' : '#3444F1' } ]} disabled={selectedAvatar === null} onPress={() => handleNextPress()}>
                         <Text style={styles.nextButtonText}>Suivant</Text>
                     </TouchableOpacity>
                 </View>

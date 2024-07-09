@@ -1,16 +1,32 @@
 import React from "react";
 import Progressbar from "./Progressbar";
 import { Text, View } from "./Themed";
-import { View as DefaultView, StyleSheet } from 'react-native'
+import { View as DefaultView, StyleSheet, Image } from 'react-native';
+import Svg, { SvgXml } from 'react-native-svg';
 
-export default function Thematique(props: { title : string, style?: {},  progress? : number, icon: JSX.Element }) {
+export default function Thematique(props: { title : string, style?: {},  progress? : number, icon: string }) {
+  const [svgData, setSvgData] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    const fetchSvg = async () => {
+      try {
+        const response = await fetch(props.icon);
+        const svgText = await response.text();
+        setSvgData(svgText);
+      } catch (error) {
+        console.error('Error fetching SVG:', error);
+      }
+    };
+
+    fetchSvg();
+  }, []);
     return (
       <View lightColor='#fff' style={[styles.container,styles.container, props.style]}>
         <DefaultView style={{gap : 10}}>
           <Text lightColor='#000' style={{fontSize: 14}}>{props.title}</Text>
           <Progressbar type="rectangular" value={props.progress ?? 0} barColor="rgba(56, 239, 125, 1)" style={{width: '80%'}} />
         </DefaultView>
-        {props.icon}
+        {svgData && <SvgXml xml={svgData} width={50} height={50} />}
       </View>
     )
 }

@@ -8,23 +8,34 @@ import GameItem from '../../components/GameItem';
 import { Game } from '../../services/Interfaces';
 import { ScrollView, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AntDesign  } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { getGames } from '@/models/games';
+import { getAwardsByTheme } from '@/models/awards';
+import { getTheme } from '@/models/themes';
+import { GAMEIDS } from '@/constants/Config';
 
-const ListPage: React.FC = () => {
+export default function ListPage() {
+    const params = useLocalSearchParams();
     const { state, dispatch } = useUsers();
     // const [clickedGame, setClickedGame] = useState<Game | undefined>(undefined);
     const [gameListe, setGameListe] = useState<Array<JSX.Element>>([]);
-    let games = [];
+    let games : any[] = [];
+    let awards : any[] = [];
     
     const fetchGames = async () => {
         dispatch({ type: "GAMES_PROCESS_REQUEST"});
+        dispatch({ type: "AWARDS_PROCESS_REQUEST"});
         if(state.games.length > 0) {
-        games = state.games;
+            games = state.games;
         }
-        // const response = await fetch('http://localhost:3000/games');
-        const response = { json: () => Promise.resolve(arrayGames) };
-        games = await response.json();
+        if(state.awards.length > 0) {
+            awards = state.awards;
+        }
+        games = await getGames();
+        const theme = await getTheme(params?.theme as string);
+        awards = await getAwardsByTheme(theme as Parse.Object);
+        dispatch({ type: "AWARDS_FETCH", payload: awards });
         dispatch({ type: "GAMES_FETCH", payload: games });
     }
 
@@ -33,8 +44,23 @@ const ListPage: React.FC = () => {
     }, []);
     
     useEffect(() => {
-        setGameListe(state.games.map((game: Game, index: Key | null | undefined) => <GameItem key={index} game={game} onPress={() => {}} />));
-    }, [state.games]);
+        setGameListe(state.games.map((game: Parse.Object, index: Key | null | undefined) => {
+            let progress = 0, level = 1;
+            state.awards.forEach((award : Parse.Object) => {
+                console.log(award.get('game').id, game.id, state.awards);
+                if(award.get('game').id === game.id) progress++;
+            });
+            if(progress >= 20) {
+                progress = progress - 20;
+                level = 3;
+            } else if(progress >= 10) {
+                progress = progress - 10;
+                level = 2;
+            }
+            const gamePath = GAMEIDS[game.id as keyof typeof GAMEIDS];
+            return <Pressable key={index} onPress={() => router.push({pathname:`/game/${gamePath}`, params: {id: game.id, level: level, progress: progress, color: game.get('color')}})}><GameItem  game={game} onPress={() => {}} progress={progress} level={level} /></Pressable>;
+        }));
+    }, [state.games, state.awards]);
 
     const rightButton : React.ReactNode = (
         <Pressable onPress={() => router.push('/game/infos')}>
@@ -77,5 +103,3 @@ const styles = StyleSheet.create({
         fontFamily: 'PopinsMedium'
     }
 });
-
-export default ListPage;

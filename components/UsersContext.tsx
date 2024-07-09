@@ -7,7 +7,10 @@ const initialState = {
     user: {},
     users: [],
     games: [],
+    awards: [],
+    themes: [],
     store: [],
+    room: {},
     isLoading: false,
     error: null,
 };
@@ -60,6 +63,52 @@ const usersReducer = (state: any, action: any) => {
                 ...state,
                 games: [],
             };
+        case "AWARDS_PROCESS_REQUEST":
+            return {
+                ...state,
+                isLoading: true,
+                error: null,
+            };
+        case "AWARDS_PROCESS_FAILURE":
+            return {
+                ...state,
+                isLoading: false,
+                error: action.payload,
+            };
+        case "AWARDS_FETCH":
+            return {
+                ...state,
+                isLoading: false,
+                awards: action.payload,
+            };
+        case "AWARDS_CLEAR":
+            return {
+                ...state,
+                awards: [],
+            };
+        case "THEMES_PROCESS_REQUEST":
+            return {
+                ...state,
+                isLoading: true,
+                error: null,
+            };
+        case "THEMES_PROCESS_FAILURE":
+            return {
+                ...state,
+                isLoading: false,
+                error: action.payload,
+            };
+        case "THEMES_FETCH":
+            return {
+                ...state,
+                isLoading: false,
+                themes: action.payload,
+            };
+        case "THEMES_CLEAR":
+            return {
+                ...state,
+                themes: [],
+            };
         case "STORE_PROCESS_REQUEST":
             return {
                 ...state,
@@ -105,6 +154,29 @@ const usersReducer = (state: any, action: any) => {
             return {
                 ...state,
                 user: {},
+            };
+        case "ROOM_PROCESS_REQUEST":
+            return {
+                ...state,
+                isLoading: true,
+                error: null,
+            };
+        case "ROOM_PROCESS_FAILURE":
+            return {
+                ...state,
+                isLoading: false,
+                error: action.payload,
+            };
+        case "ROOM_FETCH":
+            return {
+                ...state,
+                isLoading: false,
+                room: action.payload,
+            };
+        case "ROOM_CLEAR":
+            return {
+                ...state,
+                room: {},
             };
         case "LOGOUT":
             return initialState;

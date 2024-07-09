@@ -11,9 +11,13 @@ import React from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Parse from 'parse/react-native';
 import "react-native-get-random-values";
-import { userLogin } from '@/models';
+import { userLogin, userSignup } from '@/models';
 import { useUsers } from '@/components/UsersContext';
 import * as config from '@/constants/Config';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import { ParseUser } from "@/services/Interfaces";
+import { Camera } from 'expo-camera';
+// import { GOOGLE_CLIENT_ID_ANDROID } from '@/constants/Config';
 
 //Before using the SDK...
 Parse.setAsyncStorage(AsyncStorage);
@@ -22,17 +26,63 @@ Parse.initialize(config.BACK4APP_APP_ID, config.BACK4APP_JS_KEY);
 //Point to Back4App Parse API address 
 Parse.serverURL = config.BACK4APP_SERVER_URL;
 export default function WelcomeScreen() {
-  const { dispatch } = useUsers();
+  const { state, dispatch } = useUsers();
   const slideAnim = useRef(new Animated.Value(300)).current;
   const [reduceWelcome, setReduceWelcome] = useState<boolean>(false);
   const [hidePassword, setHidePassWord] = useState<boolean>(true);
   const [firstOpen, setFirstOpen] = useState<boolean>(true);
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
+  const [errorMessage, setErrorMessage] = useState<string>('');
 
-  const hangleLogin = async () => {
+  GoogleSignin.configure({
+    scopes: ['profile', 'email'],
+  });
+
+  const signIn = async () => {
+    try {
+      if(GoogleSignin.hasPreviousSignIn()) await GoogleSignin.signOut();
+      await GoogleSignin.hasPlayServices();
+      const userInfo = await GoogleSignin.signIn();
+      
+      if(userInfo) {
+        userLogin({
+          email: userInfo.user.email, 
+          password: userInfo.user.id,
+          id: '',
+          username: '',
+          age: 0,
+          disponibility: '',
+          avatar: undefined
+        }).then((user: Parse.User | undefined) => {          
+          if(user) {
+            console.log('User logged in', user);
+            dispatch({ type: "USER_FETCH", payload: user });
+            router.push('/(tabs)/exercises');
+          } else {
+            const user = {
+              email: userInfo.user.email,
+              password: userInfo.user.id,
+              id: '',
+              username: userInfo.user.givenName,
+              age: 0,
+              disponibility: '',
+              avatar: undefined
+            } as ParseUser;
+            dispatch({ type: "USER_FETCH", payload: user });
+            router.push('/register/avatar');
+          };
+        });
+      }
+    } catch (error) {
+      console.log('Error while signing in with Google', error);
+    }
+  }
+
+  const handleLogin = async () => {
     userLogin({
-      email: email, password: password,
+      email: email, 
+      password: password,
       id: '',
       username: '',
       age: 0,
@@ -43,13 +93,22 @@ export default function WelcomeScreen() {
         console.log('User logged in', user);
         dispatch({ type: "USER_FETCH", payload: user });
         router.push('/(tabs)/exercises');
-      } else {
-        console.error('User not found');
+
       }
+    }).catch((error: Error) => {
+      setErrorMessage(error.message);
     });
   }
 
   useEffect(() => {
+    (async () => {
+      try {
+        const { status } = await Camera.requestCameraPermissionsAsync();
+        setHasPermission(status === 'granted');
+      } catch (error) {
+        console.log('Error while requesting camera permissions', error);
+      }
+    })();
     Animated.timing(slideAnim, {
       toValue: 0,
       duration: 300,
@@ -76,7 +135,7 @@ export default function WelcomeScreen() {
         <WelcomeSvg width={reduceWelcome ? 100 : 219} height={reduceWelcome ? 100 : 227}/>
         <Text style={{fontSize: 48, margin: 20 }}>Bienvenue !</Text>
       </DefaultView>
-
+    
       <SafeAreaView style={{flex: 0.4, alignItems: 'center', display: 'flex', flexDirection: 'column', gap: 15,width: '100%', paddingHorizontal: 20}}>
         <TextInput
           style={styles.input}
@@ -92,27 +151,31 @@ export default function WelcomeScreen() {
           />
           <Pressable  style={{ width: '10%', alignItems:'center', justifyContent:'center', height:50 }} onPress={() => setHidePassWord(!hidePassword)}><FontAwesome name={hidePassword ? "eye" : "eye-slash"} size={18} color="rgba(60, 60, 67, 0.6)"/></Pressable>
         </SafeAreaView>
-        <Pressable onPress={hangleLogin} style={styles.buttonConnect}>
+        <Pressable onPress={handleLogin} style={styles.buttonConnect}>
           <Text style={{color: '#fff', fontSize: 18}}>Se connecter</Text>
         </Pressable>
-        <Pressable style={styles.buttonConnectGoogle}>
+        <Pressable style={styles.buttonConnectGoogle} onPress={() => signIn()}>
           <GoogleLogo width={14} height={14}/>
           <Text lightColor='#000' darkColor='#fff' style={{ fontSize: 13 }}>Connectez-vous avec Google</Text>
         </Pressable>
+        {errorMessage ? <Text style={{ color: 'red' }}>{errorMessage}</Text> : null}
       </SafeAreaView>
-
-      <DefaultView  style={{flex: 0.1, alignItems: 'center', flexDirection:'row', gap: 5, display: reduceWelcome ? 'none': 'flex'}}><Text lightColor='rgba(60, 60, 67, 0.6)' darkColor='#fff' style={{fontSize: 13 }}>Vous n'avez pas encore de compte?</Text><Link href='/register'><Text style={{fontSize: 13, color: '#3444F1'}}>S'inscrire</Text></Link></DefaultView>
+    
+      <DefaultView  style={{flex: 0.1, alignItems: 'center', flexDirection:'row', gap: 5, display: reduceWelcome ? 'none': 'flex'}}>
+        <Text lightColor='rgba(60, 60, 67, 0.6)' darkColor='#fff' style={{fontSize: 13 }}>Vous n'avez pas encore de compte?</Text>
+        <Link href='/register'><Text style={{fontSize: 13, color: '#3444F1'}}>S'inscrire</Text></Link>
+      </DefaultView>
       
       {/* Use a light status bar on iOS to account for the black space above the modal */}
       <StatusBar style={Platform.OS === 'ios' ? 'light' : 'auto'} />
     </View>
-      { firstOpen &&
-        <View style={styles.overlay}>
-        <SafeAreaView style={{flex: 0.5, width: '100%'}}>
-          <Animated.View style={{flex: 1,translateY: slideAnim }}>
-            <Tutorial onEnd={() => setFirstOpen(false)}/>
-          </Animated.View>
-        </SafeAreaView>
+    { firstOpen &&
+      <View style={styles.overlay}>
+      <SafeAreaView style={{flex: 0.5, width: '100%'}}>
+        <Animated.View style={{flex: 1,translateY: slideAnim }}>
+          <Tutorial onEnd={() => setFirstOpen(false)}/>
+        </Animated.View>
+      </SafeAreaView>
       </View>
       }
     </>
@@ -171,3 +234,8 @@ const styles = StyleSheet.create({
   image: {
   }
 });
+
+function setHasPermission(arg0: boolean) {
+  throw new Error('Function not implemented.');
+}
+

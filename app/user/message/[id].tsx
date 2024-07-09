@@ -9,16 +9,23 @@ import TopBarCustom from '@/components/TopBarCustom';
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
 import Loader from '@/components/Loader';
+import { createRoom, getRooms } from '@/models/room';
+import { WEBSOCKET_URL } from '@/constants/Config';
+import AvatarImage from '@/components/AvatarImage';
+import { stat } from 'fs';
+import { getMessagesByRoom, sendMessage } from '@/models/message';
+import { send } from 'process';
 
 export default function MessageScreen() {
     const params = useLocalSearchParams();
-    const { state, dispatch } = useUsers();
+    const { state } = useUsers();
     const [user, setUser] = useState<Parse.Object | undefined>(undefined);
     const messageRef = React.useRef<TextInput>(null);
     const [message, setMessage] = useState<string>('');
+    const [room, setRoom] = useState<Parse.Object | undefined>(undefined);
     const [serverState, setServerState] = React.useState('Loading...');
     const [serverMessages, setServerMessages] = React.useState<Message[]>();
-    var ws = React.useRef(new WebSocket('https://websocket-mxh5j2eu.b4a.run/')).current;
+    var ws = React.useRef(new WebSocket(WEBSOCKET_URL)).current;
 
     useEffect(() => {
       const serverMessagesList: any[] = [];
@@ -45,6 +52,26 @@ export default function MessageScreen() {
         console.log('Error:', e);
         setServerState(e.toString());
       };
+      getRooms(state.user).then((rooms: Parse.Object[]) => {
+        rooms.forEach(room => {
+          if(!room.get('call') && !room.get('group') && room.get('members').find((user: Parse.Object) => user.id === params.id)) {
+            setRoom(room);
+            getMessagesByRoom(room).then((messages: Parse.Object[]) => {
+              messages.forEach((message: Parse.Object) => {
+                serverMessagesList.push({
+                  id: message.id,
+                  content: message.get('content'),
+                  sender: message.get('owner').id == state.user.id ? state.user.id : params.id,
+                  receiver: message.get('owner').id == state.user.id ? state.user.id : params.id,
+                  createdAt: message.get('createdAt')
+                });
+                const sortedMessages = serverMessagesList.sort((a, b) => a.createdAt - b.createdAt).reverse();
+                setServerMessages(sortedMessages);
+              });
+            });
+          }
+        });  
+      });
     }, []);
 
     useEffect(() => {
@@ -55,7 +82,10 @@ export default function MessageScreen() {
 
 
     function handleGoVisio(): void {
-        router.push(`/user/visio/${user?.id}`);
+      createRoom('', [state.user, user], false, true)
+      .then((room: Parse.Object) => {
+        router.push({ pathname: '/user/visio/' + room.id , params: { isCaller: 'true'}});
+      });
     }
 
     function handleMessageSend(): void {
@@ -64,10 +94,11 @@ export default function MessageScreen() {
           id: Math.random(),
           content: message,
           sender: state.user.id,
-          receiver: user.id,
-          createdAt: new Date()
+          receiver: user.id
         };
-        ws.send(JSON.stringify(payload));
+        sendMessage(message, state.user, user).then((message: Parse.Object) => {
+          ws.send(JSON.stringify(payload));
+        });
         messageRef.current?.clear();
       }
     }
@@ -77,12 +108,6 @@ export default function MessageScreen() {
     //     handleMessageSend();
     //   }
     // };
-
-    useEffect(() => {
-        if (params.id !== undefined) {
-            setUser(state.users.find((user: User) => user.id.toString() === params.id));
-        }
-    }, [params.id]);
 
     // useEffect(() => {
     //   window.addEventListener('keydown', handleKeyPress);
@@ -114,7 +139,7 @@ export default function MessageScreen() {
             <ScrollView>
               {serverMessages?.map((message, index) => (
                 <View key={index} style={message.sender === state.user.id ? styles.messageMine : styles.messageHis}>
-                  <Text style={[styles.messageText, message.sender === state.user.id ? styles.mine : styles.his]}>{message.content}</Text>
+                  { message.sender !== state.user.id && <AvatarImage size={25} avatar={user?.get('avatar')}  />}<Text style={[styles.messageText, message.sender === state.user.id ? styles.mine : styles.his]}>{message.content}</Text>
                 </View>
               ))}
             </ScrollView>
@@ -150,27 +175,36 @@ const styles = StyleSheet.create({
     width: undefined,
     padding: 10,
     marginBottom: 25,
-    backgroundColor: '#3444F1',
-    borderRadius: 10,
-    alignSelf: 'flex-end'
+    alignSelf: 'flex-end',
+    flexDirection: 'row-reverse',
+    backgroundColor: 'transparent',
+    alignItems: 'center',
+    gap: 5
   },
   messageHis: {
     width: undefined,
     padding: 10,
     marginBottom: 25,
-    backgroundColor: '#dedede',
-    borderRadius: 10,
-    alignSelf: 'flex-start'
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    backgroundColor: 'transparent',
+    alignItems: 'center',
+    gap: 5
   },
   messageText: {
     fontSize: 16,
-    fontFamily: 'PopinsRegular'
+    fontFamily: 'PopinsRegular',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 10
   },
   mine: {
-    color: '#fff'
+    color: '#fff',
+    backgroundColor: '#3444F1',
   },
   his: {
-    color: '#252525'
+    color: '#252525',
+    backgroundColor: '#dedede',
   },
   messageContainer: {
     width: "100%",

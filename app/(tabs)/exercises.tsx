@@ -1,19 +1,56 @@
-import { StyleSheet, View as DefaultView, Text as DefaultText, ScrollView, TouchableOpacity, BackHandler } from 'react-native';
+import { StyleSheet, View as DefaultView, Text as DefaultText, ScrollView, TouchableOpacity, BackHandler, PanResponder, Animated, Pressable } from 'react-native';
 import { Text, View } from '@/components/Themed';
-import { Coin, Guitar, Camembert, Art, Astronot } from '@/assets/images';
+import { Astronot } from '@/assets/images';
 import Thematique from '@/components/ThematiqueView';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import HistoriqueThematique from '@/components/HistoriqueThematique';
 import DragIndicator from '@/components/DragIndicator';
 import { router } from 'expo-router';
 import { useUsers } from '@/components/UsersContext';
-import React from 'react';
+import React, { Key } from 'react';
 import { userLogout } from '@/models';
 import { Modal } from '@/components/Modal';
+import { getThemes } from '@/models/themes';
+import Awards from '@/components/Awards';
+import { getAwardsByTheme, getPlayerAwards, getPlayerAwardsByGame } from '@/models/awards';
 
 export default function ExercisesSreen() {
   const { state, dispatch } = useUsers();
   const [modalVisible, setModalVisible] = React.useState(false);
+  const [themes, setThemes] = React.useState<Array<JSX.Element>>([]);
+  const [lastExercises, setLastExercises] = React.useState<Parse.Object[]>([]);
+  const pan = React.useRef(new Animated.ValueXY()).current;
+  const [themeFullScreen, setThemeFullScreen] = React.useState<boolean>(false);
+
+  const panResponder = React.useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onPanResponderMove: Animated.event(
+        [
+          null,
+          { dx: pan.x, dy: pan.y }
+        ],
+        { useNativeDriver: false }
+      ),
+      onPanResponderRelease: (event, gestureState) => {
+        if (gestureState.dy < -20 ) {
+          setThemeFullScreen(true);
+        } else if(gestureState.dy > 100){
+          setThemeFullScreen(false);
+        }
+        // Reset the position
+        Animated.spring(pan, { toValue: { x: 0, y: 0 }, useNativeDriver: false }).start();
+      },
+    })
+  ).current;
+
+  // React.useEffect(() => {
+  //   if(state.user) {
+  //     state.user.relation('exercises').query().find().then((exercises: Parse.Object[]) => {
+  //       setLastExercises(exercises);
+  //     });
+  //   }
+  // }, [state.user]);
 
   const handleGoBack = () => {
     userLogout().then(() => {
@@ -22,6 +59,19 @@ export default function ExercisesSreen() {
       router.push('/');
     });
   }
+
+  React.useEffect(() => {
+    getThemes().then((themes: Parse.Object[]) => {
+      dispatch({ type: 'THEMES_FETCH', payload: themes });
+      setThemes(themes.map((theme: Parse.Object, index: Key | null | undefined) => {
+        return <Pressable key={index} onPress={() => router.push({pathname:'/game/list', params:{theme: theme.id}})}><Thematique title={theme.get('name')} icon={theme.get('icon').url()} /></Pressable>
+      }));
+    });
+
+    getPlayerAwards().then((awards: Parse.Object[]) => {
+      dispatch({ type: 'AWARDS_FETCH', payload: awards });
+    });
+  }, []);
 
   React.useEffect(() => {
     const backHandler = BackHandler.addEventListener('hardwareBackPress', () => { setModalVisible(true); return true });
@@ -39,13 +89,8 @@ export default function ExercisesSreen() {
       }
     } status={modalVisible} callback={[handleGoBack, () => setModalVisible(false)]} />
     <View style={styles.container}>
-        <DefaultView style={styles.containerEarning}>
-          
-        <TouchableOpacity onPress={() => router.push('/game/store')}>
-          <View lightColor='#fff' style={styles.earnings}><Coin style={{position: 'absolute', left: -10}}/><Text lightColor='#616161' style={{fontSize: 10}}>150+</Text></View>
-          </TouchableOpacity>
-        </DefaultView>
-      
+        <Awards/>
+      { !themeFullScreen &&
       <DefaultView style={styles.upperPart}>
         <DefaultView style={{ flex: 0.6, justifyContent: 'center', paddingLeft: 20}}>
           <DefaultText style={{flexWrap: "nowrap",color: "#fff", fontFamily: 'PopinsMedium', fontSize:24}}>Bonjour, { state.user?.get('username') }</DefaultText>
@@ -53,22 +98,30 @@ export default function ExercisesSreen() {
         </DefaultView>
         <DefaultView style={{ justifyContent: 'center', flex: 0.4 }}><Astronot/></DefaultView>
       </DefaultView>
-      <View lightColor='#fff' style={styles.containerBody}>
+      }
+      <Animated.View
+        style={[styles.containerBody, { transform: [{ translateY: !themeFullScreen ? pan.y : 0 }] , flex: themeFullScreen ? 1 : 0.7, marginTop: themeFullScreen ? 0 : 20 }]}
+        {...panResponder.panHandlers}
+      >
         <DragIndicator extraStyle={{ backgroundColor: 'rgba(38, 50, 56, 0.43)', alignSelf: 'center'}} />
         <Text style={{textAlign: 'center', fontSize: 20, marginTop: 15}}>Liste des thématiques</Text>
-        <SafeAreaView edges={['bottom', 'left', 'right']}>
+        { lastExercises.length > 0 && !themeFullScreen &&
+        <SafeAreaView edges={['bottom', 'left', 'right']} style={{ paddingHorizontal: 20 }}>
           <ScrollView style={styles.containerHistoriqueThematique} horizontal={true} showsHorizontalScrollIndicator={false}>
             <HistoriqueThematique title='Musique' level={2} lastExercise={7} style={{backgroundColor: '#FFB31F'}} />
             <HistoriqueThematique title='LifeStyle' level={1} lastExercise={6} style={{backgroundColor: '#DD246E'}} />
             <HistoriqueThematique title='Marketing' level={2} lastExercise={1} style={{backgroundColor: '#3444F1'}} />
           </ScrollView>
         </SafeAreaView>
-        <View lightColor='#fff'style={{marginTop: -10, padding: 0, gap: 20}}>
-          <Thematique title='Musique' icon={<Guitar/>} progress={80} />
-          <Thematique title='Marketing' icon={<Camembert/>} progress={50} />
-          <Thematique title='Art & Design' icon={<Art/>} progress={30} />
-        </View>
-      </View>
+        }
+        <SafeAreaView edges={['bottom', 'left', 'right']} style={{marginTop: -10}}>
+          <ScrollView showsHorizontalScrollIndicator={false} scrollEnabled={themeFullScreen} >
+            <View lightColor='#fff' style={{ paddingHorizontal: 20, gap: 20, marginBottom: 100}}>
+            {themes}
+            </View>
+          </ScrollView>
+        </SafeAreaView>
+      </Animated.View>
     </View>
     </>
   );
@@ -95,13 +148,13 @@ const styles = StyleSheet.create({
     width: '100%'
   },
   containerBody: {
-    flex: 0.7,
     borderTopLeftRadius: 48,
     borderTopRightRadius: 48,
-    padding: 20,
+    paddingVertical: 20,
     gap: 20,
     height: '100%',
-    width: '100%'
+    width: '100%',
+    backgroundColor: '#fff',
   },
   containerEarning : {
     flex: 0.1, 
